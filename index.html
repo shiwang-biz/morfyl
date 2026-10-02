@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FileForge</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar" data-tauri-drag-region>
+      <div class="brand" data-tauri-drag-region>
+        <span class="logo" aria-hidden="true"></span>
+        <span>FileForge</span>
+      </div>
+      <nav class="tabs" role="tablist">
+        <button role="tab" class="tab active" data-view="convert" aria-selected="true">Convert</button>
+        <button role="tab" class="tab" data-view="engines" aria-selected="false">Engines <span id="engine-badge" class="badge" hidden></span></button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- ============================== CONVERT ============================== -->
+      <section id="view-convert" class="view">
+        <div id="dropzone" class="dropzone">
+          <div class="drop-inner">
+            <div class="drop-icon" aria-hidden="true">⇪</div>
+            <p class="drop-title">Drop files or folders here</p>
+            <p class="drop-sub">Images, video, audio, documents, PDFs, ebooks and archives</p>
+            <div class="drop-actions">
+              <button id="add-files" class="btn primary">Add files</button>
+              <button id="add-folder" class="btn">Add folder</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="queue-wrap" hidden>
+          <div class="queue-toolbar">
+            <div class="bulk">
+              <label for="bulk-format">Convert all to</label>
+              <select id="bulk-format"></select>
+            </div>
+            <div class="spacer"></div>
+            <button id="add-more" class="btn small">+ Add</button>
+            <button id="clear-done" class="btn small ghost">Clear finished</button>
+            <button id="clear-all" class="btn small ghost">Clear all</button>
+          </div>
+          <ul id="queue" class="queue"></ul>
+        </div>
+      </section>
+
+      <!-- ============================== ENGINES ============================== -->
+      <section id="view-engines" class="view" hidden>
+        <p class="lead">
+          Engines do the actual converting. ImageMagick and FFmpeg ship inside the app. Pandoc, Ghostscript and 7-Zip
+          download on first use. LibreOffice and Calibre are large, so FileForge uses your installed copy.
+        </p>
+        <div id="engines" class="engines"></div>
+      </section>
+    </main>
+
+    <footer class="bottombar">
+      <div class="outdir">
+        <span class="muted">Save to</span>
+        <button id="outdir-btn" class="btn small ghost" title="Choose output folder">Same folder as original</button>
+        <button id="outdir-reset" class="link" hidden>reset</button>
+      </div>
+      <div class="spacer"></div>
+      <button id="settings-btn" class="btn ghost">Options</button>
+      <button id="convert-btn" class="btn primary" disabled>Convert</button>
+    </footer>
+
+    <!-- ============================== OPTIONS ============================== -->
+    <dialog id="settings" class="sheet">
+      <form method="dialog">
+        <h2>Options</h2>
+        <fieldset>
+          <legend>Images</legend>
+          <label class="row">Quality <input type="range" min="30" max="100" name="imageQuality" /><output data-for="imageQuality"></output></label>
+          <label class="row">Max width <input type="number" min="1" name="maxWidth" placeholder="original" /></label>
+          <label class="row">Max height <input type="number" min="1" name="maxHeight" placeholder="original" /></label>
+          <label class="row check"><input type="checkbox" name="stripMetadata" /> Remove metadata (EXIF, GPS)</label>
+        </fieldset>
+        <fieldset>
+          <legend>Video &amp; audio</legend>
+          <label class="row">Video quality
+            <select name="videoQuality"><option value="high">High</option><option value="medium">Balanced</option><option value="low">Small file</option></select>
+          </label>
+          <label class="row">Max resolution
+            <select name="videoMaxHeight"><option value="">Original</option><option value="2160">4K</option><option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option></select>
+          </label>
+          <label class="row">Audio bitrate (kbps)
+            <select name="audioBitrate"><option>96</option><option>128</option><option>192</option><option>256</option><option>320</option></select>
+          </label>
+          <label class="row">GIF frame rate <input type="number" min="1" max="50" name="gifFps" /></label>
+          <label class="row">GIF width <input type="number" min="64" max="1920" name="gifWidth" /></label>
+        </fieldset>
+        <fieldset>
+          <legend>PDF &amp; queue</legend>
+          <label class="row">PDF page resolution (DPI)
+            <select name="pdfDpi"><option>72</option><option>150</option><option>300</option><option>600</option></select>
+          </label>
+          <label class="row">Convert at once <input type="number" min="1" max="8" name="parallel" /></label>
+        </fieldset>
+        <div class="sheet-actions">
+          <button value="reset" class="btn ghost" id="settings-reset">Reset</button>
+          <button value="ok" class="btn primary">Done</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="drag-overlay" class="drag-overlay" hidden><div>Drop to add</div></div>
+    <div id="toast" class="toast" hidden></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

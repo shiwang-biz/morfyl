@@ -1,0 +1,132 @@
+name: Release
+
+# Push a tag like v0.1.0 to build signed-ready installers for macOS (Apple Silicon + Intel)
+# and Windows, with slim ImageMagick + FFmpeg compiled in. The result is a draft GitHub release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  engines:
+    name: Engines (${{ matrix.triple }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-14, triple: aarch64-apple-darwin }
+          - { os: macos-15-intel, triple: x86_64-apple-darwin }
+          - { os: windows-latest, triple: x86_64-pc-windows-msvc }
+    runs-on: ${{ matrix.os }}
+    env:
+      TARGET_TRIPLE: ${{ matrix.triple }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache compiled engines
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            src-tauri/binaries
+            LICENSES
+          key: engines-${{ matrix.triple }}-${{ hashFiles('scripts/engines/**') }}
+
+      - name: Build tools (macOS)
+        if: runner.os == 'macOS' && steps.cache.outputs.cache-hit != 'true'
+        run: brew install nasm meson ninja cmake autoconf automake libtool pkg-config
+
+      - name: Build tools (Windows / MSYS2)
+        if: runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            base-devel git zip unzip autotools
+            mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-nasm mingw-w64-ucrt-x86_64-meson mingw-w64-ucrt-x86_64-pkgconf
+
+      - name: Build ImageMagick + FFmpeg (macOS)
+        if: runner.os == 'macOS' && steps.cache.outputs.cache-hit != 'true'
+        run: |
+          bash scripts/engines/build-imagemagick.sh
+          bash scripts/engines/build-ffmpeg.sh
+
+      - name: Build ImageMagick + FFmpeg (Windows)
+        if: runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+        shell: msys2 {0}
+        run: |
+          bash scripts/engines/build-imagemagick.sh
+          bash scripts/engines/build-ffmpeg.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: engines-${{ matrix.triple }}
+          path: |
+            src-tauri/binaries
+            LICENSES
+
+  app:
+    name: App (${{ matrix.triple }})
+    needs: engines
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-14, triple: aarch64-apple-darwin }
+          - { os: macos-15-intel, triple: x86_64-apple-darwin }
+          - { os: windows-latest, triple: x86_64-pc-windows-msvc }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: engines-${{ matrix.triple }}
+          path: .
+
+      - name: Restore executable bits
+        if: runner.os == 'macOS'
+        run: chmod +x src-tauri/binaries/*
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+
+      - run: npm ci
+
+      # Only export signing variables that are actually set; empty ones make the bundler fail.
+      - name: Signing configuration
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            if [ -n "${!v}" ]; then
+              { echo "$v<<__EOF__"; echo "${!v}"; echo "__EOF__"; } >> "$GITHUB_ENV"
+            fi
+          done
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILEFORGE_ENGINES_URL: https://github.com/${{ github.repository }}/releases/download/engines/manifest.json
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
+          releaseName: FileForge v__VERSION__
+          releaseBody: Download the .dmg for macOS (aarch64 = Apple Silicon, x64 = Intel) or the -setup.exe for Windows.
+          releaseDraft: true
+          args: --config src-tauri/tauri.engines.conf.json

@@ -1,0 +1,15 @@
+[package]
+name = "convert-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Engine-agnostic conversion planning and execution for FileForge"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+tokio = { version = "1", features = ["process", "io-util", "sync", "macros", "rt", "fs", "time"] }
+which = "7"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

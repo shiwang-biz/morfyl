@@ -1,0 +1,11 @@
+node_modules/
+dist/
+target/
+.engine-build/
+dist-engines/
+src-tauri/gen/schemas/
+src-tauri/binaries/*
+!src-tauri/binaries/.gitkeep
+LICENSES/*.txt
+!LICENSES/README.txt
+.DS_Store
