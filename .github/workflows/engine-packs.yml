@@ -60,6 +60,8 @@ jobs:
           merge-multiple: true
           path: dist-engines
       - name: Write manifest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python3 scripts/engines/make-manifest.py dist-engines "https://github.com/${{ github.repository }}/releases/download/engines"
           python3 scripts/engines/resolve-installers.py dist-engines/manifest.json

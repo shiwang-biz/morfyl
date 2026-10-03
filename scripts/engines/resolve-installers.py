@@ -13,7 +13,9 @@ Adds:
   }
 If a lookup fails, the previous entry is kept, so a flaky mirror never removes an installer.
 """
+import hashlib
 import json
+import os
 import pathlib
 import re
 import sys
@@ -44,6 +46,15 @@ def head_size(url: str) -> int | None:
     except Exception as e:  # noqa: BLE001
         print(f"  missing: {url} ({e})", file=sys.stderr)
         return None
+
+
+def sha256_of(url: str) -> str:
+    """Download once and hash, for installers that don't publish a checksum."""
+    h = hashlib.sha256()
+    with get(url, timeout=600) as r:
+        for chunk in iter(lambda: r.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def version_key(v: str):
@@ -80,23 +91,46 @@ def libreoffice() -> dict:
 
 
 def calibre() -> dict:
-    v = text("https://code.calibre-ebook.com/latest").strip()
-    if not re.fullmatch(r"\d+\.\d+\.\d+", v):
-        raise RuntimeError(f"unexpected calibre version {v!r}")
-    base = f"https://download.calibre-ebook.com/{v}"
-    dmg = f"{base}/calibre-{v}.dmg"  # universal: Apple Silicon and Intel
-    files = {
-        "macos-aarch64": ("dmg", dmg),
-        "macos-x86_64": ("dmg", dmg),
-        "windows-x86_64": ("msi", f"{base}/calibre-64bit-{v}.msi"),
+    # Calibre publishes every release (with installers) on GitHub.
+    req = urllib.request.Request(
+        "https://api.github.com/repos/kovidgoyal/calibre/releases/latest",
+        headers={**UA, "Accept": "application/vnd.github+json",
+                 **({"Authorization": f"Bearer {os.environ['GH_TOKEN']}"} if os.environ.get("GH_TOKEN") else {})},
+    )
+    with urllib.request.urlopen(req, timeout=60) as r:
+        rel = json.load(r)
+    v = rel["tag_name"].lstrip("v")
+    assets = {a["name"]: a for a in rel.get("assets", [])}
+    wanted = {
+        "macos-aarch64": ("dmg", f"calibre-{v}.dmg"),  # universal: Apple Silicon and Intel
+        "macos-x86_64": ("dmg", f"calibre-{v}.dmg"),
+        "windows-x86_64": ("msi", f"calibre-64bit-{v}.msi"),
     }
     out = {}
-    for platform, (kind, url) in files.items():
-        size = head_size(url)
-        if size is not None:
-            out[platform] = {"url": url, "kind": kind, "version": v, "size": size}
+    for platform, (kind, name) in wanted.items():
+        a = assets.get(name)
+        if a:
+            out[platform] = {"url": a["browser_download_url"], "kind": kind, "version": v, "size": a["size"]}
+        else:
+            print(f"  calibre asset missing: {name}", file=sys.stderr)
     print(f"Calibre {v}: {sorted(out)}", file=sys.stderr)
     return out
+
+
+def add_checksums(entries: dict, previous: dict):
+    """Every installer gets a SHA-256 so the app can verify the download."""
+    cache = {}
+    for platform, e in entries.items():
+        if e.get("sha256"):
+            continue
+        old = previous.get(platform, {})
+        if old.get("url") == e["url"] and old.get("sha256"):
+            e["sha256"] = old["sha256"]  # same file as last time
+            continue
+        if e["url"] not in cache:
+            print(f"  hashing {e['url']}", file=sys.stderr)
+            cache[e["url"]] = sha256_of(e["url"])
+        e["sha256"] = cache[e["url"]]
 
 
 def main():
@@ -107,6 +141,7 @@ def main():
         try:
             found = fn()
             if found:
+                add_checksums(found, installers.get(key, {}))
                 installers[key] = {**installers.get(key, {}), **found}
         except Exception as e:  # noqa: BLE001
             print(f"WARNING: {key} lookup failed, keeping previous entry: {e}", file=sys.stderr)
