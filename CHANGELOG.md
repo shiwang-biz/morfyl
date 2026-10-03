@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0
+- **Engine guides.** Every engine now explains what it's for, with everyday examples
+  (iPhone photo → JPG, Word → PDF, video → MP3, EPUB → Kindle…), plus a
+  **Which engine do I need?** table at the top of the Engines tab.
+- **Detailed setup guides.** Step-by-step instructions for Mac and Windows: where to download,
+  which file to pick, each install step, copy-ready commands, and where Morfyl looks afterwards.
+- Removed automatic engine downloads. Engines are installed with their own official installers
+  and Morfyl finds them automatically. **Locate…** now also accepts an app (e.g. LibreOffice in Applications) or a folder.
+
 ## 0.2.0
 - **One-click engines.** Every engine except the built-in ImageMagick and FFmpeg installs from the Engines tab with
   one click, including **LibreOffice** (Office files) and **Calibre** (ebooks). They go into Morfyl's own folder:

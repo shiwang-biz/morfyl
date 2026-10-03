@@ -9,3 +9,4 @@ src-tauri/binaries/*
 LICENSES/*.txt
 !LICENSES/README.txt
 .DS_Store
+__pycache__/

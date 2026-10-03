@@ -22,10 +22,8 @@ pub enum EngineId {
 pub enum Delivery {
     /// Shipped inside the app installer.
     Bundled,
-    /// Small portable pack the app downloads on first use.
-    OnDemand,
-    /// Too large to ship; the user installs it (we detect it) or points us at it.
-    System,
+    /// Installed by the user (Morfyl finds it automatically, or via Locate…).
+    External,
 }
 
 impl EngineId {
@@ -90,8 +88,7 @@ impl EngineId {
     pub fn delivery(self) -> Delivery {
         match self {
             EngineId::ImageMagick | EngineId::FFmpeg => Delivery::Bundled,
-            EngineId::Pandoc | EngineId::Ghostscript | EngineId::SevenZip => Delivery::OnDemand,
-            EngineId::LibreOffice | EngineId::Calibre => Delivery::System,
+            _ => Delivery::External,
         }
     }
 

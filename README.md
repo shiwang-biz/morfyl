@@ -28,14 +28,10 @@ resolution, audio bitrate, GIF settings, PDF DPI, light and dark mode. Existing 
   muxers and filters it needs; no network, devices or ffprobe). They are verified to depend only on OS libraries.
 * **OS video encoders.** H.264 uses Apple VideoToolbox / Windows Media Foundation, so the default FFmpeg is LGPL and
   carries no x264. Set `GPL=1` to add x264 instead.
-* **One-click engines.** Everything except ImageMagick and FFmpeg installs from the Engines tab with one click
-  (or **Install all missing**), into Morfyl's own data folder, with no admin password:
-  * Pandoc, Ghostscript and 7-Zip: small packs we build (SHA-256 verified).
-  * LibreOffice and Calibre: the official installers (.dmg on macOS, unpacked with `hdiutil` + `ditto`; .msi on
-    Windows, unpacked with `msiexec /a`). Links point at the newest official version and are refreshed weekly by
-    `refresh-installers.yml` (`scripts/engines/resolve-installers.py`).
-  * Copies already on the computer (Applications, Program Files, Homebrew, PATH) are used automatically, and
-    **Locate…** points Morfyl at any other copy. Each engine card has a step-by-step **How to install** guide.
+* **External engines are installed by the user.** Pandoc, Ghostscript, 7-Zip, LibreOffice and Calibre are installed
+  with their own official installers. The Engines tab explains what each engine is for and has a step-by-step setup
+  guide for Mac and Windows (`src/engine-guides.js`). Morfyl finds them automatically in Applications, Program Files,
+  Homebrew folders and PATH; **Locate…** points it at any other copy.
 
 Check the real sizes in the CI logs (each build script prints them); expect roughly 30–45 MB installers.
 
@@ -55,8 +51,8 @@ Check the real sizes in the CI logs (each build script prints them); expect roug
 crates/convert-core/    Rust library: format detection, engine discovery, command building, runner (no UI; fully tested)
 src-tauri/              Tauri app: commands, events, engine downloader
 src/ + index.html       UI (plain JS + CSS, no framework)
-scripts/engines/        Slim engine builds + downloadable packs (versions pinned in versions.env)
-.github/workflows/      ci.yml (tests), release.yml (installers), engine-packs.yml (on-demand packs)
+scripts/engines/        Slim ImageMagick + FFmpeg builds (versions pinned in versions.env)
+.github/workflows/      ci.yml (tests), release.yml (installers)
 ```
 
 ## Run it locally
@@ -86,11 +82,7 @@ cargo test -p convert-core -- --nocapture
 ## Build the installers (GitHub Actions)
 
 1. Push this project to a GitHub repository.
-2. In `src-tauri/src/installer.rs` nothing needs changing: the release workflow sets `MORFYL_ENGINES_URL` to
-   `https://github.com/<you>/<repo>/releases/download/engines/manifest.json` automatically.
-3. **Actions → Engine packs → Run workflow.** Builds Pandoc/Ghostscript/7-Zip packs for each platform and publishes them
-   with `manifest.json` on a release tagged `engines`. Run again whenever you bump their versions.
-4. **Tag a release:** `git tag v0.1.0 && git push --tags`. `release.yml` compiles ImageMagick + FFmpeg for
+3. **Tag a release:** `git tag v0.1.0 && git push --tags`. `release.yml` compiles ImageMagick + FFmpeg for
    macOS Apple Silicon, macOS Intel and Windows x64 (cached after the first run, which takes ~30–60 min),
    then builds `.dmg`, `.msi` and `-setup.exe` into a **draft release**.
 
