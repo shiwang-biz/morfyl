@@ -1,7 +1,7 @@
 {
   "name": "morfyl",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -20,7 +20,7 @@
     "@tauri-apps/cli": "^2",
     "vite": "^6"
   },
-  "description": "Morfyl \u2013 File Converter by Craziest Coders",
+  "description": "Morfyl – File Converter by Craziest Coders",
   "author": "Craziest Coders (https://craziestcoders.com)",
   "homepage": "https://craziestcoders.com"
 }

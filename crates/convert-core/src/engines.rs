@@ -95,6 +95,18 @@ impl EngineId {
         }
     }
 
+    /// Rough download size shown before the manifest has been fetched.
+    pub fn size_hint(self) -> &'static str {
+        match self {
+            EngineId::ImageMagick | EngineId::FFmpeg => "built in",
+            EngineId::Pandoc => "about 30 MB",
+            EngineId::Ghostscript => "about 12 MB",
+            EngineId::SevenZip => "about 2 MB",
+            EngineId::LibreOffice => "about 350 MB",
+            EngineId::Calibre => "about 250 MB",
+        }
+    }
+
     pub fn download_page(self) -> &'static str {
         match self {
             EngineId::ImageMagick => "https://imagemagick.org/script/download.php",
@@ -134,8 +146,18 @@ impl EngineId {
         #[cfg(target_os = "macos")]
         {
             match self {
-                EngineId::LibreOffice => out.push("/Applications/LibreOffice.app/Contents/MacOS/soffice".into()),
-                EngineId::Calibre => out.push("/Applications/calibre.app/Contents/MacOS/ebook-convert".into()),
+                EngineId::LibreOffice => {
+                    out.push("/Applications/LibreOffice.app/Contents/MacOS/soffice".into());
+                    if let Some(h) = std::env::var_os("HOME") {
+                        out.push(Path::new(&h).join("Applications/LibreOffice.app/Contents/MacOS/soffice"));
+                    }
+                }
+                EngineId::Calibre => {
+                    out.push("/Applications/calibre.app/Contents/MacOS/ebook-convert".into());
+                    if let Some(h) = std::env::var_os("HOME") {
+                        out.push(Path::new(&h).join("Applications/calibre.app/Contents/MacOS/ebook-convert"));
+                    }
+                }
                 _ => {}
             }
             for dir in ["/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin"] {
@@ -256,7 +278,7 @@ impl Locator {
             }
         }
         if let Some(dl) = &self.downloads_dir {
-            if let Some(p) = find_in_tree(&dl.join(id.key()), id.binary_names(), 4) {
+            if let Some(p) = find_in_tree(&dl.join(id.key()), id.binary_names(), 6) {
                 return Some(Located { path: p, source: Source::Downloaded });
             }
         }
@@ -274,10 +296,16 @@ impl Locator {
     }
 }
 
-/// Depth-limited search for the first matching executable inside an extracted pack.
+/// Depth-limited search for the first matching executable inside an installed engine folder.
+/// macOS `.app` bundles are not walked (they hold thousands of folders); only their
+/// `Contents/MacOS` is checked.
 pub fn find_in_tree(root: &Path, names: &[&str], depth: usize) -> Option<PathBuf> {
     if !root.is_dir() {
         return None;
+    }
+    if root.extension().map(|e| e == "app").unwrap_or(false) {
+        let macos = root.join("Contents").join("MacOS");
+        return names.iter().map(|n| macos.join(n)).find(|p| p.is_file());
     }
     for n in names {
         let p = root.join(exe_name(n));
@@ -294,8 +322,11 @@ pub fn find_in_tree(root: &Path, names: &[&str], depth: usize) -> Option<PathBuf
         .map(|e| e.path())
         .filter(|p| p.is_dir())
         .collect();
-    // Prefer "bin" folders.
-    dirs.sort_by_key(|p| p.file_name().map(|n| n != "bin").unwrap_or(true));
+    // Look in .app bundles and bin/program folders first.
+    dirs.sort_by_key(|p| {
+        let n = p.file_name().map(|n| n.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+        !(n.ends_with(".app") || n == "bin" || n == "program")
+    });
     dirs.into_iter().find_map(|d| find_in_tree(&d, names, depth - 1))
 }
 
@@ -439,6 +470,25 @@ mod tests {
         let s = parse_magick_formats(out);
         assert!(s.contains("AVIF") && s.contains("JPEG") && s.contains("PNG"));
         assert!(!s.contains("HEIC") && !s.contains("3FR") && !s.contains("FORMAT"));
+    }
+
+    #[test]
+    fn finds_programs_in_installed_trees() {
+        let root = std::env::temp_dir().join("morfyl-find-test");
+        let _ = std::fs::remove_dir_all(&root);
+        // macOS app bundle: LibreOffice.app/Contents/MacOS/soffice
+        let macos = root.join("lo/LibreOffice.app/Contents/MacOS");
+        std::fs::create_dir_all(&macos).unwrap();
+        std::fs::create_dir_all(root.join("lo/LibreOffice.app/Contents/Resources/deep/er")).unwrap();
+        std::fs::write(macos.join("soffice"), "").unwrap();
+        assert_eq!(find_in_tree(&root.join("lo"), &["soffice"], 6), Some(macos.join("soffice")));
+        // Windows-style admin install: <dir>/PFiles/LibreOffice/program/soffice(.exe)
+        let prog = root.join("win/PFiles/LibreOffice/program");
+        std::fs::create_dir_all(&prog).unwrap();
+        std::fs::write(prog.join(exe_name("soffice")), "").unwrap();
+        assert_eq!(find_in_tree(&root.join("win"), &["soffice"], 6), Some(prog.join(exe_name("soffice"))));
+        assert_eq!(find_in_tree(&root.join("win"), &["soffice"], 2), None, "depth limit respected");
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]

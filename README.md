@@ -28,9 +28,14 @@ resolution, audio bitrate, GIF settings, PDF DPI, light and dark mode. Existing 
   muxers and filters it needs; no network, devices or ffprobe). They are verified to depend only on OS libraries.
 * **OS video encoders.** H.264 uses Apple VideoToolbox / Windows Media Foundation, so the default FFmpeg is LGPL and
   carries no x264. Set `GPL=1` to add x264 instead.
-* **On-demand engines.** Pandoc, Ghostscript and 7-Zip are downloaded (SHA-256 verified) the first time they're needed.
-  LibreOffice (~300 MB) and Calibre are detected if installed; the Engines tab links to their download pages
-  and has a **Locate…** button for custom installs.
+* **One-click engines.** Everything except ImageMagick and FFmpeg installs from the Engines tab with one click
+  (or **Install all missing**), into Morfyl's own data folder, with no admin password:
+  * Pandoc, Ghostscript and 7-Zip: small packs we build (SHA-256 verified).
+  * LibreOffice and Calibre: the official installers (.dmg on macOS, unpacked with `hdiutil` + `ditto`; .msi on
+    Windows, unpacked with `msiexec /a`). Links point at the newest official version and are refreshed weekly by
+    `refresh-installers.yml` (`scripts/engines/resolve-installers.py`).
+  * Copies already on the computer (Applications, Program Files, Homebrew, PATH) are used automatically, and
+    **Locate…** points Morfyl at any other copy. Each engine card has a step-by-step **How to install** guide.
 
 Check the real sizes in the CI logs (each build script prints them); expect roughly 30–45 MB installers.
 

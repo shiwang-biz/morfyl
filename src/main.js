@@ -199,7 +199,7 @@ function statusHtml(item) {
     default:
       if (out && !out.available) {
         if (out.missing?.length)
-          return `<span class="warn">Needs ${out.missing.map(engineName).join(" + ")}</span> <button class="link" data-act="engines">Set up</button>`;
+          return `<span class="warn">Needs ${out.missing.map(engineName).join(" + ")}</span> <button class="link" data-act="install" title="Install automatically">Install</button>`;
         return `<span class="warn" title="${esc(out.note ?? "")}">Not available</span>`;
       }
       return "";
@@ -357,7 +357,95 @@ listen("job-progress", ({ payload }) => {
 
 // ---------------------------------------------------------------- engines
 
-const SOURCE_LABEL = { bundled: "Built in", downloaded: "Downloaded", system: "Installed", custom: "Custom" };
+const SOURCE_LABEL = { bundled: "Built in", downloaded: "Installed by Morfyl", system: "Found on this computer", custom: "Custom" };
+let PLATFORM = "macos";
+let OFFERS = {}; // engine key -> { available, size, version }
+const INSTALL_STATE = {}; // engine key -> { stage, progress, error }
+
+/** Step-by-step instructions shown under "How to install". */
+const GUIDES = {
+  pandoc: {
+    why: "Converts Markdown, HTML, LaTeX and Word documents into each other, and makes EPUB ebooks.",
+    macos: [
+      "Easiest: click <b>Install</b> above. Morfyl downloads Pandoc (about 30 MB) and sets it up.",
+      "Or install it yourself: download the macOS <b>.pkg</b> from <a data-url='https://github.com/jgm/pandoc/releases/latest'>pandoc.org</a> and open it.",
+      "If you use Homebrew: <code>brew install pandoc</code>",
+      "Come back here and click <b>Check again</b>.",
+    ],
+    windows: [
+      "Easiest: click <b>Install</b> above. Morfyl downloads Pandoc (about 30 MB) and sets it up.",
+      "Or install it yourself: download the Windows <b>.msi</b> from <a data-url='https://github.com/jgm/pandoc/releases/latest'>pandoc.org</a> and run it.",
+      "Or in PowerShell: <code>winget install JohnMacFarlane.Pandoc</code>",
+      "Come back here and click <b>Check again</b>.",
+    ],
+  },
+  ghostscript: {
+    why: "Turns PDF pages into images or text, makes PDFs smaller and converts them to grayscale.",
+    macos: [
+      "Easiest: click <b>Install</b> above (about 12 MB).",
+      "If you use Homebrew: <code>brew install ghostscript</code>",
+      "Come back here and click <b>Check again</b>.",
+    ],
+    windows: [
+      "Easiest: click <b>Install</b> above (about 12 MB).",
+      "Or download the 64-bit installer from <a data-url='https://ghostscript.com/releases/gsdnld.html'>ghostscript.com</a> and run it with the default options.",
+      "Come back here and click <b>Check again</b>.",
+    ],
+  },
+  sevenzip: {
+    why: "Opens and creates ZIP, 7Z, RAR, TAR and GZ archives.",
+    macos: [
+      "Easiest: click <b>Install</b> above (about 2 MB).",
+      "If you use Homebrew: <code>brew install sevenzip</code>",
+      "Come back here and click <b>Check again</b>.",
+    ],
+    windows: [
+      "Easiest: click <b>Install</b> above (about 2 MB).",
+      "Or download the 64-bit installer from <a data-url='https://www.7-zip.org/download.html'>7-zip.org</a> and run it.",
+      "Come back here and click <b>Check again</b>.",
+    ],
+  },
+  libreoffice: {
+    why: "Converts Word, Excel and PowerPoint files (and OpenDocument, RTF, CSV) to and from PDF and each other.",
+    macos: [
+      "Easiest: click <b>Install</b> above. Morfyl downloads the official LibreOffice (about 350 MB) and sets it up inside its own folder. This takes a few minutes.",
+      "Already use LibreOffice? Morfyl finds it automatically in <b>Applications</b>.",
+      "To install it yourself: download it from <a data-url='https://www.libreoffice.org/download/download-libreoffice/'>libreoffice.org</a> (choose <i>macOS Apple Silicon</i> or <i>macOS x86-64</i> for Intel), open the .dmg and drag LibreOffice into <b>Applications</b>.",
+      "Come back here and click <b>Check again</b>.",
+    ],
+    windows: [
+      "Easiest: click <b>Install</b> above. Morfyl downloads the official LibreOffice (about 350 MB) and sets it up inside its own folder. This takes a few minutes.",
+      "Already use LibreOffice? Morfyl finds it automatically in <b>Program Files</b>.",
+      "To install it yourself: download the Windows x86-64 installer from <a data-url='https://www.libreoffice.org/download/download-libreoffice/'>libreoffice.org</a> and run it with the default options. Or in PowerShell: <code>winget install TheDocumentFoundation.LibreOffice</code>",
+      "Come back here and click <b>Check again</b>.",
+    ],
+  },
+  calibre: {
+    why: "Converts ebooks: EPUB, MOBI, Kindle AZW3, FB2, and ebooks to PDF or Word.",
+    macos: [
+      "Easiest: click <b>Install</b> above. Morfyl downloads the official calibre (about 250 MB) and sets it up inside its own folder.",
+      "Already use calibre? Morfyl finds it automatically in <b>Applications</b>.",
+      "To install it yourself: download it from <a data-url='https://calibre-ebook.com/download_osx'>calibre-ebook.com</a>, open the .dmg and drag calibre into <b>Applications</b>.",
+      "Come back here and click <b>Check again</b>.",
+    ],
+    windows: [
+      "Easiest: click <b>Install</b> above. Morfyl downloads the official calibre (about 250 MB) and sets it up inside its own folder.",
+      "Already use calibre? Morfyl finds it automatically in <b>Program Files</b>.",
+      "To install it yourself: download the 64-bit installer from <a data-url='https://calibre-ebook.com/download_windows'>calibre-ebook.com</a> and run it. Or in PowerShell: <code>winget install calibre.calibre</code>",
+      "Come back here and click <b>Check again</b>.",
+    ],
+  },
+};
+
+function fmtBytes(n) {
+  if (!n) return "";
+  return n >= 1073741824 ? `${(n / 1073741824).toFixed(1)} GB` : `${Math.max(1, Math.round(n / 1048576))} MB`;
+}
+
+function sizeLabel(e) {
+  const o = OFFERS[e.id];
+  return o?.size ? fmtBytes(o.size) : e.sizeHint.replace(/^about /, "~");
+}
 
 async function loadEngines() {
   try {
@@ -369,77 +457,189 @@ async function loadEngines() {
   renderEngines();
 }
 
+async function loadOffers() {
+  try {
+    OFFERS = await invoke("engine_offers");
+  } catch {
+    OFFERS = {};
+  }
+  renderEngines();
+}
+
+function engineActions(e) {
+  const st = INSTALL_STATE[e.id];
+  if (e.delivery === "bundled") return "";
+  if (st?.busy) {
+    return `<button class="btn small ghost" data-eng="cancel" data-id="${e.id}">Cancel</button>`;
+  }
+  const parts = [];
+  if (!e.path) {
+    parts.push(`<button class="btn small primary" data-eng="install" data-id="${e.id}">Install <span class="dim">· ${esc(sizeLabel(e))}</span></button>`);
+  }
+  parts.push(`<button class="btn small ghost" data-eng="guide" data-id="${e.id}">${e.path ? "Help" : "How to install"}</button>`);
+  parts.push(`<button class="btn small ghost" data-eng="locate" data-id="${e.id}" title="Point Morfyl at a copy you already have">Locate…</button>`);
+  if (e.source === "custom") parts.push(`<button class="link" data-eng="reset" data-id="${e.id}">Use default</button>`);
+  if (e.managed) parts.push(`<button class="link" data-eng="remove" data-id="${e.id}">Remove</button>`);
+  return parts.join("");
+}
+
+function guideHtml(e) {
+  const g = GUIDES[e.id];
+  if (!g) return "";
+  const steps = g[PLATFORM] || g.macos;
+  return `
+    <div class="guide" data-guide="${e.id}" hidden>
+      <p class="muted">${g.why}</p>
+      <ol>${steps.map((s) => `<li>${s}</li>`).join("")}</ol>
+    </div>`;
+}
+
 function renderEngines() {
-  const missing = state.engines.filter((e) => !e.path).length;
+  const missing = state.engines.filter((e) => !e.path);
   const badge = $("#engine-badge");
-  badge.hidden = missing === 0;
-  badge.textContent = missing;
+  badge.hidden = missing.length === 0;
+  badge.textContent = missing.length;
+  const installable = missing.filter((e) => e.delivery !== "bundled" && !INSTALL_STATE[e.id]?.busy);
+  const allBtn = $("#install-all");
+  allBtn.hidden = installable.length < 2;
+  if (!allBtn.hidden) {
+    const total = installable.reduce((sum, e) => sum + (OFFERS[e.id]?.size || 0), 0);
+    allBtn.textContent = `Install all missing${total ? ` · ${fmtBytes(total)}` : ""}`;
+  }
+  // Keep open guides open across re-renders.
+  const openGuides = new Set([...document.querySelectorAll(".guide:not([hidden])")].map((g) => g.dataset.guide));
   $("#engines").innerHTML = state.engines
     .map((e) => {
-      const installed = !!e.path;
-      const chip = installed
-        ? `<span class="chip ok">${SOURCE_LABEL[e.source] ?? "Ready"}</span>`
-        : `<span class="chip warn">Not installed</span>`;
-      const primary = installed
-        ? ""
-        : e.delivery === "ondemand"
-          ? `<button class="btn small primary" data-eng="install" data-id="${e.id}">Download</button>`
-          : `<button class="btn small primary" data-eng="get" data-id="${e.id}">Get ${esc(e.name)}</button>`;
+      const st = INSTALL_STATE[e.id];
+      const chip = st?.busy
+        ? `<span class="chip busy">Installing…</span>`
+        : e.path
+          ? `<span class="chip ok">${SOURCE_LABEL[e.source] ?? "Ready"}</span>`
+          : `<span class="chip warn">Not installed</span>`;
+      const pct = st && st.progress >= 0 ? Math.round(st.progress * 100) : null;
       return `
       <article class="engine" data-id="${e.id}">
         <header><h3>${esc(e.name)}</h3>${chip}</header>
         <p>${esc(e.purpose)}</p>
-        ${installed ? `<p class="path muted" title="${esc(e.path)}">${esc(e.version || e.path)}</p>` : ""}
-        <div class="engine-progress" hidden><div class="bar"><div class="fill"></div></div><span class="muted stage"></span></div>
-        <div class="engine-actions">
-          ${primary}
-          <button class="btn small ghost" data-eng="locate" data-id="${e.id}">Locate…</button>
-          ${e.source === "custom" ? `<button class="link" data-eng="reset" data-id="${e.id}">Use default</button>` : ""}
-          <span class="spacer"></span>
-          <span class="muted tiny">${esc(e.license)}</span>
-        </div>
+        ${e.path ? `<p class="path muted" title="${esc(e.path)}">${esc(e.version || e.path)}</p>` : ""}
+        ${
+          st?.busy || st?.error
+            ? `<div class="engine-progress">
+                 ${st.busy ? `<div class="bar ${pct === null ? "indeterminate" : ""}"><div class="fill" style="width:${pct ?? 30}%"></div></div>` : ""}
+                 <span class="${st.error ? "err" : "muted"} stage">${esc(st.error || st.stage || "")}</span>
+               </div>`
+            : ""
+        }
+        <div class="engine-actions">${engineActions(e)}<span class="spacer"></span><span class="muted tiny">${esc(e.license)}</span></div>
+        ${guideHtml(e)}
       </article>`;
     })
     .join("");
+  for (const id of openGuides) {
+    const g = document.querySelector(`.guide[data-guide="${id}"]`);
+    if (g) g.hidden = false;
+  }
 }
 
 listen("engine-progress", ({ payload }) => {
+  const st = (INSTALL_STATE[payload.id] ||= { busy: true });
+  st.stage = payload.stage;
+  st.progress = payload.progress;
   const card = document.querySelector(`.engine[data-id="${payload.id}"]`);
-  if (!card) return;
-  const box = card.querySelector(".engine-progress");
-  box.hidden = false;
-  box.querySelector(".fill").style.width = `${Math.round(payload.progress * 100)}%`;
-  box.querySelector(".stage").textContent = payload.stage;
+  const fill = card?.querySelector(".fill");
+  const stage = card?.querySelector(".stage");
+  if (fill && stage) {
+    const bar = fill.parentElement;
+    bar.classList.toggle("indeterminate", payload.progress < 0);
+    fill.style.width = payload.progress < 0 ? "30%" : `${Math.round(payload.progress * 100)}%`;
+    stage.textContent = payload.stage;
+  } else {
+    renderEngines();
+  }
 });
 
+/** Install one engine; resolves true on success. */
+async function installEngine(id) {
+  const eng = state.engines.find((e) => e.id === id);
+  if (INSTALL_STATE[id]?.busy) return false;
+  INSTALL_STATE[id] = { busy: true, stage: "Starting…", progress: -1 };
+  renderEngines();
+  try {
+    await invoke("install_engine", { id });
+    delete INSTALL_STATE[id];
+    toast(`${eng?.name ?? id} is ready`);
+    return true;
+  } catch (e) {
+    const msg = String(e);
+    INSTALL_STATE[id] = msg === "Cancelled" ? undefined : { busy: false, error: msg };
+    if (msg !== "Cancelled") toast(`${eng?.name ?? id}: ${msg}`);
+    return false;
+  } finally {
+    await loadEngines();
+    await refreshAvailability();
+  }
+}
+
+async function installMany(ids) {
+  // One at a time: large downloads in parallel just compete for bandwidth.
+  for (const id of ids) await installEngine(id);
+}
+
 $("#engines").addEventListener("click", async (ev) => {
+  const link = ev.target.closest("a[data-url]");
+  if (link) {
+    ev.preventDefault();
+    return openUrl(link.dataset.url);
+  }
   const btn = ev.target.closest("[data-eng]");
   if (!btn) return;
   const id = btn.dataset.id;
   const eng = state.engines.find((e) => e.id === id);
-  const act = btn.dataset.eng;
-  if (act === "get") return openUrl(eng.downloadPage);
-  if (act === "install") {
-    btn.disabled = true;
-    try {
-      await invoke("install_engine", { id });
-      toast(`${eng.name} is ready`);
-    } catch (e) {
-      toast(String(e));
+  switch (btn.dataset.eng) {
+    case "install":
+      return installEngine(id);
+    case "cancel":
+      return invoke("cancel_install", { id });
+    case "guide": {
+      const g = document.querySelector(`.guide[data-guide="${id}"]`);
+      if (g) g.hidden = !g.hidden;
+      return;
     }
-  } else if (act === "locate") {
-    const picked = await open({ multiple: false, directory: false, title: `Locate the ${eng.name} program` });
-    if (!picked) return;
-    try {
-      await invoke("set_engine_path", { id, path: picked });
-    } catch (e) {
-      return toast(String(e));
+    case "locate": {
+      const picked = await open({ multiple: false, directory: false, title: `Locate the ${eng.name} program` });
+      if (!picked) return;
+      try {
+        await invoke("set_engine_path", { id, path: picked });
+      } catch (e) {
+        return toast(String(e));
+      }
+      break;
     }
-  } else if (act === "reset") {
-    await invoke("set_engine_path", { id, path: null });
+    case "reset":
+      await invoke("set_engine_path", { id, path: null });
+      break;
+    case "remove":
+      try {
+        await invoke("uninstall_engine", { id });
+        toast(`${eng.name} removed`);
+      } catch (e) {
+        toast(String(e));
+      }
+      break;
   }
   await loadEngines();
   await refreshAvailability();
+});
+
+$("#install-all").addEventListener("click", () => {
+  const ids = state.engines.filter((e) => !e.path && e.delivery !== "bundled").map((e) => e.id);
+  installMany(ids);
+});
+
+$("#refresh-engines").addEventListener("click", async () => {
+  await loadEngines();
+  await refreshAvailability();
+  toast("Engines checked");
 });
 
 // ----------------------------------------------------------------- events
@@ -452,7 +652,10 @@ function showView(name) {
   }
   $("#view-convert").hidden = name !== "convert";
   $("#view-engines").hidden = name !== "engines";
-  if (name === "engines") loadEngines();
+  if (name === "engines") {
+    loadEngines();
+    if (!Object.keys(OFFERS).length) loadOffers();
+  }
 }
 
 for (const t of document.querySelectorAll(".tab")) t.addEventListener("click", () => showView(t.dataset.view));
@@ -500,6 +703,12 @@ $("#queue").addEventListener("click", async (ev) => {
     case "engines":
       showView("engines");
       break;
+    case "install": {
+      const out = item.outputs.find((o) => o.format === item.format);
+      showView("engines");
+      installMany(out?.missing ?? []);
+      break;
+    }
     case "details":
       message(item.error, { title: `Couldn't convert ${item.name}`, kind: "error" });
       break;
@@ -612,6 +821,10 @@ for (const el of document.querySelectorAll("[data-url]")) {
 }
 
 // ------------------------------------------------------------------- boot
+
+invoke("platform")
+  .then((p) => (PLATFORM = p === "windows" ? "windows" : "macos"))
+  .catch(() => {});
 
 loadEngines();
 render();

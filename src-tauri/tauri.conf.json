@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Morfyl",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "identifier": "com.craziestcoders.morfyl",
   "build": {
     "beforeDevCommand": "npm run dev",

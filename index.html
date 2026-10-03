@@ -58,10 +58,16 @@
 
       <!-- ============================== ENGINES ============================== -->
       <section id="view-engines" class="view" hidden>
-        <p class="lead">
-          Engines do the actual converting. ImageMagick and FFmpeg ship inside the app. Pandoc, Ghostscript and 7-Zip
-          download on first use. LibreOffice and Calibre are large, so Morfyl uses your installed copy.
-        </p>
+        <div class="engines-head">
+          <p class="lead">
+            Engines do the actual converting. ImageMagick and FFmpeg are built in. The others install with one click
+            into Morfyl's own folder: no admin password, nothing else on your computer is changed.
+          </p>
+          <div class="engines-actions">
+            <button id="refresh-engines" class="btn small ghost" title="Look for engines again">Check again</button>
+            <button id="install-all" class="btn small primary" hidden>Install all missing</button>
+          </div>
+        </div>
         <div id="engines" class="engines"></div>
       </section>
     </main>

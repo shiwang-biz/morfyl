@@ -1,0 +1,26 @@
+name: Refresh installer links
+
+# Keeps the LibreOffice and Calibre download links in manifest.json pointing at the newest
+# official versions, without rebuilding anything. Runs weekly; can also be run by hand.
+on:
+  schedule:
+    - cron: "17 3 * * 1" # Mondays 03:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update manifest.json on the "engines" release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p work
+          gh release download engines --pattern manifest.json --dir work --clobber || echo '{"version":1,"engines":{}}' > work/manifest.json
+          python3 scripts/engines/resolve-installers.py work/manifest.json
+          cat work/manifest.json
+          gh release upload engines work/manifest.json --clobber

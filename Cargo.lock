@@ -519,7 +519,7 @@ dependencies = [
 
 [[package]]
 name = "convert-core"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "serde",
  "thiserror 2.0.21",
@@ -2151,7 +2151,7 @@ dependencies = [
 
 [[package]]
 name = "morfyl"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "convert-core",
  "futures-util",

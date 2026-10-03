@@ -22,6 +22,7 @@ struct AppState {
     /// Probed capabilities, keyed by executable path so a changed engine is re-probed.
     caps: tokio::sync::Mutex<HashMap<PathBuf, Caps>>,
     jobs: Mutex<HashMap<String, watch::Sender<bool>>>,
+    installs: Mutex<HashMap<EngineId, installer::CancelFlag>>,
     settings_path: PathBuf,
     downloads_dir: PathBuf,
     scratch: PathBuf,
@@ -79,6 +80,10 @@ struct EngineInfo {
     license: &'static str,
     delivery: convert_core::Delivery,
     download_page: &'static str,
+    size_hint: &'static str,
+    /// Installed by Morfyl into its own folder (so it can also be removed from the app).
+    managed: bool,
+    installing: bool,
     path: Option<PathBuf>,
     source: Option<Source>,
     version: Option<String>,
@@ -91,6 +96,7 @@ async fn list_engines(state: State<'_, AppState>) -> Result<Vec<EngineInfo>, Str
         EngineId::ALL.iter().map(|id| (*id, loc.find(*id))).collect()
     };
     let mut out = Vec::new();
+    let installing: Vec<EngineId> = state.installs.lock().unwrap().keys().copied().collect();
     for (id, l) in located {
         let version = match &l {
             Some(l) => state.caps_for(id, &l.path).await.version,
@@ -103,6 +109,9 @@ async fn list_engines(state: State<'_, AppState>) -> Result<Vec<EngineInfo>, Str
             license: id.license(),
             delivery: id.delivery(),
             download_page: id.download_page(),
+            size_hint: id.size_hint(),
+            managed: matches!(l.as_ref().map(|l| l.source), Some(Source::Downloaded)),
+            installing: installing.contains(&id),
             path: l.as_ref().map(|l| l.path.clone()),
             source: l.map(|l| l.source),
             version,
@@ -135,8 +144,48 @@ async fn set_engine_path(state: State<'_, AppState>, id: String, path: Option<St
 #[tauri::command]
 async fn install_engine(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<(), String> {
     let id = engine_from_key(&id)?;
-    installer::install(&app, &state.http, &state.downloads_dir, id).await?;
+    let cancel = {
+        let mut installs = state.installs.lock().unwrap();
+        if installs.contains_key(&id) {
+            return Err(format!("{} is already being installed", id.name()));
+        }
+        let flag = installer::CancelFlag::default();
+        installs.insert(id, flag.clone());
+        flag
+    };
+    let result = installer::install(&app, &state.http, &state.downloads_dir, id, cancel).await;
+    state.installs.lock().unwrap().remove(&id);
+    // The engine may have changed: forget cached capabilities so it is probed again.
+    state.caps.lock().await.clear();
+    result.map(|_| ())
+}
+
+#[tauri::command]
+fn cancel_install(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let id = engine_from_key(&id)?;
+    if let Some(flag) = state.installs.lock().unwrap().get(&id) {
+        flag.0.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
     Ok(())
+}
+
+#[tauri::command]
+async fn uninstall_engine(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let id = engine_from_key(&id)?;
+    installer::uninstall(&state.downloads_dir, id)?;
+    state.caps.lock().await.clear();
+    Ok(())
+}
+
+/// Download sizes and versions for the installable engines (needs internet).
+#[tauri::command]
+async fn engine_offers(state: State<'_, AppState>) -> Result<HashMap<String, installer::Offer>, String> {
+    Ok(installer::offers(&state.http).await)
+}
+
+#[tauri::command]
+fn platform() -> &'static str {
+    std::env::consts::OS
 }
 
 // -------------------------------------------------------------------- files
@@ -316,6 +365,7 @@ pub fn run() {
                 locator: Mutex::new(locator),
                 caps: Default::default(),
                 jobs: Default::default(),
+                installs: Default::default(),
                 settings_path,
                 downloads_dir,
                 scratch,
@@ -329,6 +379,10 @@ pub fn run() {
             list_engines,
             set_engine_path,
             install_engine,
+            cancel_install,
+            uninstall_engine,
+            engine_offers,
+            platform,
             inspect,
             convert,
             cancel,

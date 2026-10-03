@@ -232,3 +232,29 @@ input[type="number"] { border: 1px solid var(--line); background: var(--panel); 
 @media (prefers-color-scheme: dark) {
   .watermark span { opacity: 0.06; }
 }
+
+/* ------------------------------------------------------ engine installs */
+.engines-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+.engines-head .lead { margin: 4px 0 0; flex: 1; }
+.engines-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.btn .dim { opacity: 0.75; font-weight: 500; }
+.chip.busy { background: var(--accent-soft); color: var(--accent); }
+.err { color: var(--err); }
+.engine-progress .stage { font-size: 12px; }
+.bar.indeterminate .fill { width: 30% !important; animation: indet 1.2s infinite ease-in-out; }
+.guide {
+  margin-top: 8px; padding: 10px 12px; border-radius: 8px; background: var(--panel-2);
+  font-size: 13px; -webkit-user-select: text; user-select: text;
+}
+.guide p { margin: 0 0 6px; }
+.guide ol { margin: 0; padding-left: 20px; display: grid; gap: 5px; }
+.guide a { color: var(--accent); cursor: pointer; text-decoration: underline; }
+.guide code {
+  font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
+}
+@media (max-width: 860px) { .engines-head { flex-direction: column; } }
+.engines { align-items: start; }
+.engine-actions { flex-wrap: wrap; row-gap: 6px; }
+/* An open install guide gets the whole row so its steps are easy to read. */
+.engine:has(.guide:not([hidden])) { grid-column: 1 / -1; }
