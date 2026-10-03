@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "engines": {},
+  "installers": {
+    "libreoffice": {
+      "macos-aarch64": {
+        "url": "https://download.documentfoundation.org/libreoffice/stable/26.8.1/mac/aarch64/LibreOffice_26.8.1_MacOS_aarch64.dmg",
+        "kind": "dmg",
+        "version": "26.8.1",
+        "size": 100,
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "macos-x86_64": {
+        "url": "https://download.documentfoundation.org/libreoffice/stable/26.8.1/mac/x86_64/LibreOffice_26.8.1_MacOS_x86-64.dmg",
+        "kind": "dmg",
+        "version": "26.8.1",
+        "size": 100,
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "windows-x86_64": {
+        "url": "https://download.documentfoundation.org/libreoffice/stable/26.8.1/win/x86_64/LibreOffice_26.8.1_Win_x86-64.msi",
+        "kind": "msi",
+        "version": "26.8.1",
+        "size": 100,
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    },
+    "calibre": {
+      "macos-aarch64": {
+        "url": "https://github.com/kovidgoyal/calibre/releases/download/v9.15.0/calibre-9.15.0.dmg",
+        "kind": "dmg",
+        "version": "9.15.0",
+        "size": 5,
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "macos-x86_64": {
+        "url": "https://github.com/kovidgoyal/calibre/releases/download/v9.15.0/calibre-9.15.0.dmg",
+        "kind": "dmg",
+        "version": "9.15.0",
+        "size": 5,
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "windows-x86_64": {
+        "url": "https://x/calibre-64bit-9.15.0.msi",
+        "kind": "msi",
+        "version": "9.15.0",
+        "size": 6,
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    }
+  }
+}

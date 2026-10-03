@@ -48,12 +48,22 @@ def head_size(url: str) -> int | None:
         return None
 
 
-def sha256_of(url: str) -> str:
-    """Download once and hash, for installers that don't publish a checksum."""
+def sha256_of(url: str, budget_s: int = 240) -> str | None:
+    """Download once and hash, for installers that don't publish a checksum.
+    Gives up (returns None) if the mirror is too slow to finish within the time budget."""
+    import time
+    start = time.monotonic()
     h = hashlib.sha256()
-    with get(url, timeout=600) as r:
-        for chunk in iter(lambda: r.read(1 << 20), b""):
-            h.update(chunk)
+    try:
+        with get(url, timeout=60) as r:
+            for chunk in iter(lambda: r.read(1 << 20), b""):
+                h.update(chunk)
+                if time.monotonic() - start > budget_s:
+                    print(f"  too slow to hash, skipping checksum: {url}", file=sys.stderr)
+                    return None
+    except Exception as e:  # noqa: BLE001
+        print(f"  could not hash {url}: {e}", file=sys.stderr)
+        return None
     return h.hexdigest()
 
 
@@ -130,7 +140,8 @@ def add_checksums(entries: dict, previous: dict):
         if e["url"] not in cache:
             print(f"  hashing {e['url']}", file=sys.stderr)
             cache[e["url"]] = sha256_of(e["url"])
-        e["sha256"] = cache[e["url"]]
+        if cache[e["url"]]:
+            e["sha256"] = cache[e["url"]]
 
 
 def main():
