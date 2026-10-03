@@ -1,5 +1,5 @@
 {
-  "name": "fileforge",
+  "name": "morfyl",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -19,5 +19,8 @@
   "devDependencies": {
     "@tauri-apps/cli": "^2",
     "vite": "^6"
-  }
+  },
+  "description": "Morfyl \u2013 File Converter by Craziest Coders",
+  "author": "Craziest Coders (https://craziestcoders.com)",
+  "homepage": "https://craziestcoders.com"
 }

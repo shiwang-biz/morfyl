@@ -1,4 +1,4 @@
-//! FileForge conversion core: pick the right engine for a file, build the command line,
+//! Morfyl conversion core: pick the right engine for a file, build the command line,
 //! run it with progress and cancellation. Has no UI or Tauri dependency, so it is unit-testable.
 
 pub mod engines;

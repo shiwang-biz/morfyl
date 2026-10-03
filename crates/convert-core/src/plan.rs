@@ -576,7 +576,7 @@ impl Ctx<'_> {
         let (sz, _) = self.tools.get(EngineId::SevenZip)?;
         let sz = sz.to_path_buf();
         // Work inside the output folder so the final move is a cheap rename.
-        let work = unique_path(self.out_dir, &format!(".fileforge-{}", self.stem), None);
+        let work = unique_path(self.out_dir, &format!(".morfyl-{}", self.stem), None);
         let extracted = work.join("x");
         let mut steps = vec![
             Step::Mkdir(extracted.clone()),

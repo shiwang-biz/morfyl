@@ -3,20 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FileForge</title>
+    <title>Morfyl – File Converter</title>
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
     <header class="topbar" data-tauri-drag-region>
       <div class="brand" data-tauri-drag-region>
         <span class="logo" aria-hidden="true"></span>
-        <span>FileForge</span>
+        <span class="brand-name">Morfyl</span>
+        <span class="brand-sub">File Converter</span>
       </div>
       <nav class="tabs" role="tablist">
         <button role="tab" class="tab active" data-view="convert" aria-selected="true">Convert</button>
         <button role="tab" class="tab" data-view="engines" aria-selected="false">Engines <span id="engine-badge" class="badge" hidden></span></button>
       </nav>
+      <div class="spacer" data-tauri-drag-region></div>
+      <button class="credit" data-url="https://craziestcoders.com" title="Visit craziestcoders.com">
+        by <strong>Craziest Coders</strong>
+      </button>
     </header>
+
+    <!-- Brand watermark: sits above the content but ignores clicks -->
+    <div class="watermark" aria-hidden="true"><span>craziestcoders.com</span></div>
 
     <main>
       <!-- ============================== CONVERT ============================== -->
@@ -52,7 +60,7 @@
       <section id="view-engines" class="view" hidden>
         <p class="lead">
           Engines do the actual converting. ImageMagick and FFmpeg ship inside the app. Pandoc, Ghostscript and 7-Zip
-          download on first use. LibreOffice and Calibre are large, so FileForge uses your installed copy.
+          download on first use. LibreOffice and Calibre are large, so Morfyl uses your installed copy.
         </p>
         <div id="engines" class="engines"></div>
       </section>

@@ -20,7 +20,7 @@ jobs:
       - name: Conversion core (unit + real conversions)
         run: cargo test -p convert-core -- --nocapture
       - name: App compiles
-        run: cargo check -p fileforge
+        run: cargo check -p morfyl
       - uses: actions/setup-node@v4
         with:
           node-version: 22

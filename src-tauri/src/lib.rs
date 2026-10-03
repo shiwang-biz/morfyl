@@ -310,7 +310,7 @@ pub fn run() {
                     .filter_map(|(k, v)| engine_from_key(&k).ok().map(|id| (id, v)))
                     .collect(),
             };
-            let scratch = std::env::temp_dir().join("fileforge");
+            let scratch = std::env::temp_dir().join("morfyl");
             let _ = std::fs::remove_dir_all(&scratch); // leftovers from a crash
             app.manage(AppState {
                 locator: Mutex::new(locator),
@@ -320,7 +320,7 @@ pub fn run() {
                 downloads_dir,
                 scratch,
                 http: reqwest::Client::builder()
-                    .user_agent(concat!("FileForge/", env!("CARGO_PKG_VERSION")))
+                    .user_agent(concat!("Morfyl/", env!("CARGO_PKG_VERSION")))
                     .build()?,
             });
             Ok(())
@@ -336,5 +336,5 @@ pub fn run() {
             reveal
         ])
         .run(tauri::generate_context!())
-        .expect("error while running FileForge");
+        .expect("error while running Morfyl");
 }

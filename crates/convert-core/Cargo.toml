@@ -3,7 +3,7 @@ name = "convert-core"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Engine-agnostic conversion planning and execution for FileForge"
+description = "Engine-agnostic conversion planning and execution for Morfyl"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

@@ -123,10 +123,10 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          FILEFORGE_ENGINES_URL: https://github.com/${{ github.repository }}/releases/download/engines/manifest.json
+          MORFYL_ENGINES_URL: https://github.com/${{ github.repository }}/releases/download/engines/manifest.json
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
-          releaseName: FileForge v__VERSION__
+          releaseName: Morfyl v__VERSION__
           releaseBody: Download the .dmg for macOS (aarch64 = Apple Silicon, x64 = Intel) or the -setup.exe for Windows.
           releaseDraft: true
           args: --config src-tauri/tauri.engines.conf.json

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds a slim, static FFmpeg for FileForge and installs it as a Tauri sidecar:
+# Builds a slim, static FFmpeg for Morfyl and installs it as a Tauri sidecar:
 #   src-tauri/binaries/ffmpeg-<target-triple>[.exe]
 #
 # Default is an LGPL build. H.264/HEVC encoding uses the OS encoders
@@ -91,7 +91,7 @@ if ! done_before ffmpeg; then
   (
     cd "$d"
     # Keep every decoder, demuxer and parser (opening anything is the point of a converter),
-    # but only the encoders, muxers and filters FileForge actually uses.
+    # but only the encoders, muxers and filters Morfyl actually uses.
     ./configure --prefix="$PREFIX" \
       --pkg-config-flags=--static \
       --extra-cflags="-I$PREFIX/include $CFLAGS" \

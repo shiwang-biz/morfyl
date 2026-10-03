@@ -15,10 +15,10 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Emitter};
 
-/// Override at build time: FILEFORGE_ENGINES_URL=https://.../manifest.json cargo tauri build
-pub const MANIFEST_URL: &str = match option_env!("FILEFORGE_ENGINES_URL") {
+/// Override at build time: MORFYL_ENGINES_URL=https://.../manifest.json cargo tauri build
+pub const MANIFEST_URL: &str = match option_env!("MORFYL_ENGINES_URL") {
     Some(u) => u,
-    None => "https://github.com/YOUR_GITHUB_USER/fileforge/releases/download/engines/manifest.json",
+    None => "https://github.com/YOUR_GITHUB_USER/morfyl/releases/download/engines/manifest.json",
 };
 
 #[derive(Deserialize)]

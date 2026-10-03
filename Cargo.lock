@@ -1035,24 +1035,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fileforge"
-version = "0.1.0"
-dependencies = [
- "convert-core",
- "futures-util",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "sha2",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
- "tokio",
- "zip",
-]
-
-[[package]]
 name = "find-msvc-tools"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2165,6 +2147,24 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "morfyl"
+version = "0.1.0"
+dependencies = [
+ "convert-core",
+ "futures-util",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+ "tokio",
+ "zip",
 ]
 
 [[package]]

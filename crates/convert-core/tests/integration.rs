@@ -20,7 +20,7 @@ async fn toolbox() -> Toolbox {
 }
 
 fn workdir(name: &str) -> PathBuf {
-    let d = std::env::temp_dir().join("fileforge-it").join(name);
+    let d = std::env::temp_dir().join("morfyl-it").join(name);
     let _ = std::fs::remove_dir_all(&d);
     std::fs::create_dir_all(&d).unwrap();
     d
@@ -28,7 +28,7 @@ fn workdir(name: &str) -> PathBuf {
 
 async fn convert(tb: &Toolbox, input: &Path, format: &str) -> Result<Vec<PathBuf>, Error> {
     let job = Job { input: input.to_path_buf(), format: format.into(), options: Options::default() };
-    let scratch = std::env::temp_dir().join("fileforge-it-scratch");
+    let scratch = std::env::temp_dir().join("morfyl-it-scratch");
     std::fs::create_dir_all(&scratch).unwrap();
     let p = plan(&job, tb, &scratch)?;
     for l in p.command_lines() {

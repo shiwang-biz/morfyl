@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Builds a slim, static ImageMagick 7 (`magick`) for FileForge and installs it as a Tauri sidecar:
+# Builds a slim, static ImageMagick 7 (`magick`) for Morfyl and installs it as a Tauri sidecar:
 #   src-tauri/binaries/magick-<target-triple>[.exe]
 #
 # Included: JPEG, PNG, WebP, TIFF, GIF, BMP, ICO, PSD, TGA, AVIF (read+write), HEIC (read),
 #           JPEG 2000, camera RAW (LibRaw), SVG (built-in renderer), colour management (lcms2).
 # Left out to stay small: X11, fonts/text rendering, OpenEXR, DjVu, FFTW, Ghostscript PDF reading
-# (FileForge reads PDFs with Ghostscript directly).
+# (Morfyl reads PDFs with Ghostscript directly).
 #   WITH_JXL=1 ./build-imagemagick.sh   adds JPEG XL (+~3 MB)
 #
 # Same requirements as build-ffmpeg.sh.

@@ -1,7 +1,7 @@
-Third-party engines used by FileForge
+Third-party engines used by Morfyl
 =====================================
 
-FileForge runs these programs as separate processes. It does not link to them.
+Morfyl runs these programs as separate processes. It does not link to them.
 Their license texts are copied into this folder by the release build
 (scripts/engines/*.sh put each engine's COPYING/LICENSE file here).
 

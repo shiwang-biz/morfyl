@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "FileForge",
+  "productName": "Morfyl",
   "version": "0.1.0",
-  "identifier": "online.bizfunnel.fileforge",
+  "identifier": "com.craziestcoders.morfyl",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "FileForge",
+        "title": "Morfyl – File Converter",
         "width": 980,
         "height": 700,
         "minWidth": 720,
@@ -26,10 +26,15 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["dmg", "app", "nsis", "msi"],
+    "targets": [
+      "dmg",
+      "app",
+      "nsis",
+      "msi"
+    ],
     "category": "Utility",
-    "shortDescription": "Convert images, video, audio, documents, ebooks and archives",
-    "copyright": "© 2026 Bizfunnel",
+    "shortDescription": "Morfyl – File Converter by Craziest Coders",
+    "copyright": "© 2026 Craziest Coders",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -47,6 +52,9 @@
       "nsis": {
         "installMode": "currentUser"
       }
-    }
+    },
+    "publisher": "Craziest Coders",
+    "homepage": "https://craziestcoders.com",
+    "longDescription": "Morfyl converts images, video, audio, documents, PDFs, ebooks and archives on your Mac or Windows PC. Made by Craziest Coders – craziestcoders.com"
   }
 }

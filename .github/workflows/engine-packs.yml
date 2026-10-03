@@ -1,6 +1,6 @@
 name: Engine packs
 
-# Builds the small engines FileForge downloads on first use (Pandoc, Ghostscript, 7-Zip)
+# Builds the small engines Morfyl downloads on first use (Pandoc, Ghostscript, 7-Zip)
 # and publishes them, plus manifest.json, to a release tagged "engines".
 # Run it once (Actions -> Engine packs -> Run workflow) and again whenever versions.env changes.
 on:
@@ -66,5 +66,5 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release view engines >/dev/null 2>&1 || \
-            gh release create engines --title "Engine packs" --notes "Downloaded by FileForge on first use. Do not delete." --latest=false
+            gh release create engines --title "Engine packs" --notes "Downloaded by Morfyl on first use. Do not delete." --latest=false
           gh release upload engines dist-engines/* --clobber

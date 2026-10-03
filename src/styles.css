@@ -207,3 +207,28 @@ input[type="number"] { border: 1px solid var(--line); background: var(--panel); 
   .item .arrow { display: none; }
   .item .status { grid-column: 2 / 4; }
 }
+
+/* ------------------------------------------------------------ branding */
+.brand-name { font-weight: 700; }
+.brand-sub { color: var(--muted); font-weight: 500; font-size: 13px; }
+.credit {
+  border: 0; background: none; padding: 4px 8px; border-radius: 6px; cursor: pointer;
+  color: var(--muted); font-size: 12px;
+}
+.credit strong { color: var(--text); font-weight: 650; }
+.credit:hover { background: var(--panel-2); }
+.credit:hover strong { color: var(--accent); }
+
+/* Faint diagonal craziestcoders.com mark over the whole work area. */
+.watermark {
+  position: fixed; inset: 0; z-index: 40; pointer-events: none;
+  display: grid; place-items: center; overflow: hidden;
+}
+.watermark span {
+  transform: rotate(-24deg);
+  font-size: clamp(48px, 9vw, 104px); font-weight: 800; letter-spacing: -0.02em; white-space: nowrap;
+  color: var(--text); opacity: 0.045;
+}
+@media (prefers-color-scheme: dark) {
+  .watermark span { opacity: 0.06; }
+}

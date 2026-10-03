@@ -605,6 +605,12 @@ getCurrentWebview().onDragDropEvent((ev) => {
   }
 });
 
+// ---------------------------------------------------------------- branding
+
+for (const el of document.querySelectorAll("[data-url]")) {
+  el.addEventListener("click", () => openUrl(el.dataset.url).catch((e) => toast(String(e))));
+}
+
 // ------------------------------------------------------------------- boot
 
 loadEngines();

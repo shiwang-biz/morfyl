@@ -1,4 +1,6 @@
-# FileForge
+# Morfyl – File Converter
+
+by **[Craziest Coders](https://craziestcoders.com)**
 
 A desktop file converter for **macOS and Windows**, built with Tauri 2.
 Drop in images, video, audio, documents, PDFs, ebooks or archives, pick an output format, convert.
@@ -22,7 +24,7 @@ resolution, audio bitrate, GIF settings, PDF DPI, light and dark mode. Existing 
 
 * **Tauri** instead of Electron: the app shell is a few MB because it uses the system web view.
 * **Custom engine builds.** `scripts/engines/build-ffmpeg.sh` and `build-imagemagick.sh` compile static, size-optimised
-  binaries with only what FileForge uses (FFmpeg keeps every decoder so it can open anything, but only the encoders,
+  binaries with only what Morfyl uses (FFmpeg keeps every decoder so it can open anything, but only the encoders,
   muxers and filters it needs; no network, devices or ffprobe). They are verified to depend only on OS libraries.
 * **OS video encoders.** H.264 uses Apple VideoToolbox / Windows Media Foundation, so the default FFmpeg is LGPL and
   carries no x264. Set `GPL=1` to add x264 instead.
@@ -31,6 +33,16 @@ resolution, audio bitrate, GIF settings, PDF DPI, light and dark mode. Existing 
   and has a **Locate…** button for custom installs.
 
 Check the real sizes in the CI logs (each build script prints them); expect roughly 30–45 MB installers.
+
+## Branding
+
+* App name: **Morfyl – File Converter**; publisher **Craziest Coders**; bundle ID `com.craziestcoders.morfyl`
+  (set in `src-tauri/tauri.conf.json`).
+* The app shows a faint diagonal **craziestcoders.com** watermark over the window and a
+  "by Craziest Coders" link in the top bar that opens craziestcoders.com.
+  To change its strength, edit `.watermark span { opacity: … }` in `src/styles.css`;
+  the text is in `index.html` (`class="watermark"`).
+* Converted files are **not** watermarked.
 
 ## Project layout
 
@@ -69,7 +81,7 @@ cargo test -p convert-core -- --nocapture
 ## Build the installers (GitHub Actions)
 
 1. Push this project to a GitHub repository.
-2. In `src-tauri/src/installer.rs` nothing needs changing: the release workflow sets `FILEFORGE_ENGINES_URL` to
+2. In `src-tauri/src/installer.rs` nothing needs changing: the release workflow sets `MORFYL_ENGINES_URL` to
    `https://github.com/<you>/<repo>/releases/download/engines/manifest.json` automatically.
 3. **Actions → Engine packs → Run workflow.** Builds Pandoc/Ghostscript/7-Zip packs for each platform and publishes them
    with `manifest.json` on a release tagged `engines`. Run again whenever you bump their versions.
@@ -92,7 +104,7 @@ Without signing, macOS shows "unidentified developer" and Windows SmartScreen wa
 
 ## Licences
 
-FileForge's own code: MIT. Engines run as separate programs; their licences are listed in `LICENSES/README.txt`
+Morfyl's own code: MIT. Engines run as separate programs; their licences are listed in `LICENSES/README.txt`
 and their licence texts are copied into the app at build time. Points to know before selling a closed-source version:
 
 * FFmpeg default build is **LGPL** (fine for closed source when shipped as a separate program, as here). `GPL=1` makes it GPL.
