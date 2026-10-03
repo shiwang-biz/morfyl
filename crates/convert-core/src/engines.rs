@@ -367,7 +367,10 @@ pub async fn probe(id: EngineId, path: &Path) -> Caps {
     match id {
         EngineId::ImageMagick => {
             if let Some(out) = output_of(path, &["-list", "format"]).await {
-                caps.writable = Some(parse_magick_formats(&out));
+                let set = parse_magick_formats(&out);
+                // An empty list means the command failed or its format changed: don't block every
+                // conversion on that; let ImageMagick itself report what it can't write.
+                caps.writable = (!set.is_empty()).then_some(set);
             }
         }
         EngineId::FFmpeg => {
@@ -380,15 +383,16 @@ pub async fn probe(id: EngineId, path: &Path) -> Caps {
     caps
 }
 
-/// Parses `magick -list format` rows like `     AVIF* HEIC      rw+   AV1 Image File Format`.
+/// Parses `magick -list format`. ImageMagick 6 prints `Format  Module  Mode  Description`
+/// (`  AVIF* HEIC  rw+  AV1 ...`); ImageMagick 7 drops the Module column (`  AVIF  rw+  AV1 ...`).
+/// The mode is therefore the 2nd or 3rd column, whichever looks like `rw+`.
 pub fn parse_magick_formats(out: &str) -> HashSet<String> {
+    let is_mode = |m: &str| m.len() == 3 && m.chars().all(|c| matches!(c, 'r' | 'w' | '+' | '-'));
     let mut set = HashSet::new();
     for line in out.lines() {
-        let mut it = line.split_whitespace();
-        let (Some(name), Some(_module), Some(mode)) = (it.next(), it.next(), it.next()) else { continue };
-        if !(mode.len() == 3 && mode.chars().all(|c| matches!(c, 'r' | 'w' | '+' | '-'))) {
-            continue;
-        }
+        let cols: Vec<&str> = line.split_whitespace().take(3).collect();
+        let Some(name) = cols.first() else { continue };
+        let Some(mode) = cols[1..].iter().find(|m| is_mode(m)) else { continue };
         if mode.contains('w') {
             set.insert(name.trim_end_matches('*').to_ascii_uppercase());
         }
@@ -427,6 +431,14 @@ mod tests {
         let out = "   Format  Module    Mode  Description\n-----\n      AVIF  HEIC      rw+   AV1 Image\n      HEIC  HEIC      r--   HEIC\n      JPEG* JPEG      rw-   Joint\n";
         let s = parse_magick_formats(out);
         assert!(s.contains("AVIF") && s.contains("JPEG") && !s.contains("HEIC"));
+    }
+
+    #[test]
+    fn parses_magick7_list_without_module_column() {
+        let out = "   Format  Mode  Description\n-------------------------------------\n      3FR  r--   Hasselblad CFV/H3D39II Raw Format (0.21.2-Release)\n      AVIF  rw+   AV1 Image File Format (1.18.2)\n      HEIC  r--   High Efficiency Image Format (1.18.2)\n      JPEG* rw-   Joint Photographic Experts Group JFIF format (80)\n       PNG* rw+   Portable Network Graphics (1.6.44)\n";
+        let s = parse_magick_formats(out);
+        assert!(s.contains("AVIF") && s.contains("JPEG") && s.contains("PNG"));
+        assert!(!s.contains("HEIC") && !s.contains("3FR") && !s.contains("FORMAT"));
     }
 
     #[test]
