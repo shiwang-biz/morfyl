@@ -95,7 +95,10 @@ with `TARGET_TRIPLE=x86_64-pc-windows-msvc`. Then `npm run app:build:release`.
 
 ### Code signing (recommended)
 
-Without signing, macOS shows "unidentified developer" and Windows SmartScreen warns on first launch.
+Without a Developer ID, the Mac build is ad-hoc signed (`"signingIdentity": "-"` in `tauri.conf.json`), so macOS asks
+the user to confirm under **System Settings → Privacy & Security → Open Anyway**. (An app with no signature at all shows
+"is damaged and can't be opened"; `xattr -cr /Applications/Morfyl.app` clears that.) Windows SmartScreen also warns on first launch.
+When the `APPLE_SIGNING_IDENTITY` secret is set, it replaces the ad-hoc identity.
 
 * **macOS:** add repository secrets `APPLE_CERTIFICATE` (base64 .p12 of a *Developer ID Application* cert),
   `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, and for notarization `APPLE_ID`, `APPLE_PASSWORD`
