@@ -33,7 +33,8 @@ jobs:
           path: |
             src-tauri/binaries
             LICENSES
-          key: engines-${{ matrix.triple }}-${{ hashFiles('scripts/engines/**') }}
+          # Only the scripts that produce magick/ffmpeg invalidate the cache.
+          key: engines-${{ matrix.triple }}-${{ hashFiles('scripts/engines/common.sh', 'scripts/engines/build-*.sh', 'scripts/engines/versions.env') }}
 
       - name: Build tools (macOS)
         if: runner.os == 'macOS' && steps.cache.outputs.cache-hit != 'true'
