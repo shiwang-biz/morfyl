@@ -31,7 +31,7 @@ pack_pandoc() {
     windows-x86_64) asset="pandoc-$PANDOC_VERSION-windows-x86_64.zip" ;;
     *) echo "no pandoc build for $PLATFORM" >&2; return ;;
   esac
-  curl -fL --retry 4 -o "$SRC/$asset" "https://github.com/jgm/pandoc/releases/download/$PANDOC_VERSION/$asset"
+  curl -fL --retry 6 --retry-delay 5 --retry-all-errors -o "$SRC/$asset" "https://github.com/jgm/pandoc/releases/download/$PANDOC_VERSION/$asset"
   rm -rf "$stage" "$WORK/pack/pandoc-x" && mkdir -p "$stage" "$WORK/pack/pandoc-x"
   unzip -q "$SRC/$asset" -d "$WORK/pack/pandoc-x"
   cp "$(find "$WORK/pack/pandoc-x" -type f -name "pandoc$EXE" | head -1)" "$stage/"
@@ -47,7 +47,7 @@ pack_ghostscript() {
   rm -rf "$stage" && mkdir -p "$stage/bin"
   if [ "$OS" = windows ]; then
     # The official installer is an NSIS archive; 7-Zip can unpack it without running it.
-    curl -fL --retry 4 -o "$SRC/gs-win.exe" "$base/${tag}w64.exe"
+    curl -fL --retry 6 --retry-delay 5 --retry-all-errors -o "$SRC/gs-win.exe" "$base/${tag}w64.exe"
     rm -rf "$WORK/pack/gs-x" && sevenz x -y -o"$(cygpath -w "$WORK/pack/gs-x")" "$(cygpath -w "$SRC/gs-win.exe")" >/dev/null
     cp "$WORK/pack/gs-x/bin/gswin64c.exe" "$WORK/pack/gs-x/bin/gsdll64.dll" "$stage/bin/"
     cp "$WORK/pack/gs-x/doc/COPYING" "$stage/COPYING.txt" 2>/dev/null || true
@@ -89,13 +89,13 @@ pack_sevenzip() {
   rm -rf "$stage" && mkdir -p "$stage"
   if [ "$OS" = windows ]; then
     # Full 7z.exe + 7z.dll (supports RAR); unpacked from the official installer.
-    curl -fL --retry 4 -o "$SRC/7z-win.exe" "$base/7z$v-x64.exe"
+    curl -fL --retry 6 --retry-delay 5 --retry-all-errors -o "$SRC/7z-win.exe" "$base/7z$v-x64.exe"
     rm -rf "$WORK/pack/7z-x" && sevenz x -y -o"$(cygpath -w "$WORK/pack/7z-x")" "$(cygpath -w "$SRC/7z-win.exe")" >/dev/null
     cp "$WORK/pack/7z-x/7z.exe" "$WORK/pack/7z-x/7z.dll" "$stage/"
     cp "$WORK/pack/7z-x/License.txt" "$stage/License.txt"
   else
     # 7zz is a universal (arm64 + x86_64) static binary.
-    curl -fL --retry 4 -o "$SRC/7z-mac.tar.xz" "$base/7z$v-mac.tar.xz"
+    curl -fL --retry 6 --retry-delay 5 --retry-all-errors -o "$SRC/7z-mac.tar.xz" "$base/7z$v-mac.tar.xz"
     tar -xf "$SRC/7z-mac.tar.xz" -C "$stage" 7zz License.txt
     chmod +x "$stage/7zz"
   fi

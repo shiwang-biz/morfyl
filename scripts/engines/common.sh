@@ -87,18 +87,28 @@ mark_done() { touch "$STAMPS/$1"; }
 
 # fetch <url> [dirname] -> prints the extracted source directory
 fetch() {
-  local url="$1" name="${2:-}" file
+  # Runs inside $(...), where `set -e` does not apply, so every step checks for failure itself.
+  local url="$1" name="${2:-}" file top
   file="$SRC/$(basename "${url%%\?*}")"
   if [ ! -f "$file" ]; then
-    curl -fL --retry 4 --retry-delay 3 -o "$file.part" "$url" >&2
-    mv "$file.part" "$file"
+    if ! curl -fL --retry 6 --retry-delay 5 --retry-all-errors --connect-timeout 30 \
+      -o "$file.part" "$url" >&2; then
+      echo "ERROR: download failed: $url" >&2
+      rm -f "$file.part"
+      return 1
+    fi
+    mv "$file.part" "$file" || return 1
   fi
-  local top
   top="$(tar -tf "$file" 2>/dev/null | head -1 | cut -d/ -f1)"
+  if [ -z "$top" ]; then
+    echo "ERROR: $file is not a valid archive" >&2
+    rm -f "$file"
+    return 1
+  fi
   [ -n "$name" ] || name="$top"
   if [ ! -d "$SRC/$name" ]; then
-    tar -xf "$file" -C "$SRC" >&2
-    if [ "$top" != "$name" ]; then mv "$SRC/$top" "$SRC/$name"; fi
+    tar -xf "$file" -C "$SRC" >&2 || return 1
+    if [ "$top" != "$name" ]; then mv "$SRC/$top" "$SRC/$name" || return 1; fi
   fi
   echo "$SRC/$name"
 }
