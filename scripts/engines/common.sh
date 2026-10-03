@@ -44,8 +44,9 @@ if [ -z "$TARGET_TRIPLE" ]; then
 fi
 
 # Only ever see our own static libraries, never Homebrew's or the system's dylibs.
-export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig"
-export PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig"
+# Some libraries (zlib) install their .pc file under share/ instead of lib/; search both.
+export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig"
+export PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig"
 export PATH="$PREFIX/bin:$PATH"
 
 OPT_FLAGS="-Os -fPIC -ffunction-sections -fdata-sections"
@@ -190,7 +191,7 @@ install_sidecar() {
 build_zlib() {
   local d
   d="$(fetch "https://github.com/madler/zlib/releases/download/v$ZLIB_VERSION/zlib-$ZLIB_VERSION.tar.gz")"
-  cmake_build zlib "$d" -DZLIB_BUILD_EXAMPLES=OFF
+  cmake_build zlib "$d" -DZLIB_BUILD_EXAMPLES=OFF -DINSTALL_PKGCONFIG_DIR="$PREFIX/lib/pkgconfig"
   # zlib's CMake always builds a shared lib too; remove it so nothing links it.
   rm -f "$PREFIX"/lib/libz*.dylib "$PREFIX"/lib/libz*.so* "$PREFIX"/lib/libzlib.dll.a "$PREFIX"/bin/libzlib*.dll
   [ -f "$PREFIX/lib/libz.a" ] || cp "$PREFIX/lib/libzlibstatic.a" "$PREFIX/lib/libz.a" 2>/dev/null || true

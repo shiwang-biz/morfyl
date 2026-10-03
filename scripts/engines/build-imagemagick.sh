@@ -20,6 +20,8 @@ license "$d/LICENSE.md" libjpeg-turbo
 
 d="$(fetch "https://download.sourceforge.net/libpng/libpng-$LIBPNG_VERSION.tar.xz")"
 cmake_build libpng "$d" -DPNG_SHARED=OFF -DPNG_STATIC=ON -DPNG_TESTS=OFF -DPNG_TOOLS=OFF -DPNG_FRAMEWORK=OFF
+# ImageMagick looks for "libpng"; a static-only libpng build may install just libpng16.pc.
+[ -f "$PREFIX/lib/pkgconfig/libpng.pc" ] || cp "$PREFIX/lib/pkgconfig/libpng16.pc" "$PREFIX/lib/pkgconfig/libpng.pc"
 license "$d/LICENSE" libpng
 
 d="$(fetch "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-$LIBWEBP_VERSION.tar.gz")"
@@ -109,8 +111,15 @@ if ! done_before imagemagick; then
 fi
 
 "$PREFIX/bin/magick$EXE" -version
-echo "Writable formats:"
-"$PREFIX/bin/magick$EXE" -list format | awk '$3 ~ /w/ {print $1}' | tr '\n' ' '
-echo
+# `-list format`: ImageMagick 7 prints "NAME* rw+ Description" (no Module column).
+WRITABLE="$("$PREFIX/bin/magick$EXE" -list format | awk '{m = ($2 ~ /^[rw+-][rw+-][rw+-]$/) ? $2 : $3; if (m ~ /w/) {n = $1; sub(/\*$/, "", n); print n}}' | tr '\n' ' ')"
+echo "Writable formats: $WRITABLE"
+# Fail the build rather than ship a magick that silently lost a core format.
+for f in PNG JPEG WEBP TIFF GIF AVIF BMP ICO PDF; do
+  case " $WRITABLE " in
+    *" $f "*) ;;
+    *) echo "ERROR: this ImageMagick build cannot write $f; check the configure summary above." >&2; exit 1 ;;
+  esac
+done
 install_sidecar "$PREFIX/bin/magick$EXE" magick
 license "$d/LICENSE" imagemagick
