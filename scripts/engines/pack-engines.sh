@@ -59,6 +59,9 @@ pack_ghostscript() {
       log "Building Ghostscript"
       (
         cd "$d"
+        # Ghostscript's bundled (old) zlib turns fdopen() into a macro on macOS, which breaks
+        # against the macOS 15 SDK's <stdio.h>. Remove that one line; newer zlib does the same.
+        perl -pi -e 's/^\s*#\s*define fdopen\(fd,mode\) NULL.*$//' zlib/zutil.h
         # Ghostscript ships its own copies of libpng/jpeg/zlib/freetype/lcms; don't let it see ours.
         PKG_CONFIG_PATH= PKG_CONFIG_LIBDIR=/nonexistent CPPFLAGS= LDFLAGS= \
           ./configure --without-x --disable-cups --disable-gtk --disable-dbus --disable-fontconfig \
