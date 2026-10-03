@@ -96,6 +96,12 @@ if ! done_before imagemagick; then
       --with-heic --with-raw --with-xml \
       $([ "$WITH_JXL" = 1 ] && echo --with-jxl || echo --without-jxl) \
       LIBS="$CXX_RUNTIME -lm"
+    if [ "$OS" = windows ]; then
+      # libtool swallows plain `-static`, so magick.exe would mix the static and DLL C++ runtimes
+      # ("multiple definition" errors). `-all-static` is libtool's switch for a fully static exe.
+      sed -i 's/^LDFLAGS = \(.*\)$/LDFLAGS = \1 -all-static/' Makefile
+      grep '^LDFLAGS = ' Makefile
+    fi
     make -j "$JOBS"
     make install
   ) >&2
