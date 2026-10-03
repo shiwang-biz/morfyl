@@ -190,6 +190,10 @@ build_zlib() {
 build_aom() {
   local d
   d="$(fetch "https://storage.googleapis.com/aom-releases/libaom-$LIBAOM_VERSION.tar.gz")"
+  # libaom's NASM check parses `nasm -hO` help text, which NASM 3.x reworded, so it wrongly
+  # rejects a working assembler. Downgrade that check from fatal to a warning.
+  perl -0777 -pi -e 's/FATAL_ERROR(\s*"Unsupported nasm)/WARNING$1/g' \
+    "$d/build/cmake/aom_optimization.cmake"
   cmake_build aom "$d" -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_TESTS=0 -DENABLE_TOOLS=0 \
     -DENABLE_TESTDATA=0 -DCONFIG_RUNTIME_CPU_DETECT=1
   license "$d/LICENSE" libaom
